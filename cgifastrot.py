@@ -1,6 +1,8 @@
 import math
 from subprocess import *
 import sys
+import json
+import logging
 
 nb = 41
 z = [0] * nb
@@ -21,12 +23,64 @@ tstart = [190., 190., 100., 60.]
 
 
 def runModel(index, a0, a1, rh, inc, temp=-1, perc=0, gd=None):
-    print("Input Parameters:")
-    print(f'Species = {species[index]}, Avis = {a0}, Air = {a1}, r_H = {rh}, Incl = {inc}')
+    """
+    ...
+
+
+        perc : int, optional
+
+    ...
+
+    """
+
+    # initialize logger for entire program
+    logging.basicConfig(level=logging.DEBUG)
+
+    #print("Input Parameters:")
+    #print(f'Species = {species[index]}, Avis = {a0}, Air = {a1}, r_H = {rh}, Incl = {inc}')
+    logging.info('Input Parameters:')
+    logging.info(
+        f'Species = {species[index]}, Avis = {a0}, Air = {a1}, r_H = {rh}, Incl = {inc}')
     p10(index, a0, a1, rh, inc, temp, perc, gd)
+
+    # example json output
+    print(json.dumps({
+        'species': species[index],
+        'Obliquity': inc,
+        'r_H': rh,
+        'rlog': rlog,
+        # a0: {a0}, a1: {a1}, Zbar: {zbar:.2e}, Zlog: {zlog:2.2f}")
+    }))
 
 
 def p10(index, a0, a1, rh, inc, temp, perc, gd):
+    """Single sentence description.
+
+    Longer description, optional
+
+    Paramaters
+    ----------
+    index : int
+        Brief description of parameter.
+
+    a0 : float
+        Mean visual albedo
+
+    a1 : float
+        ....
+
+
+    Returns
+    -------
+    None
+
+
+    Notes
+    -----
+    etc., optional
+
+    """
+
     if a0 < 0:
         p800()
     incl = (90 - inc) * math.pi / 180
@@ -41,7 +95,8 @@ def p10(index, a0, a1, rh, inc, temp, perc, gd):
     nflag = 1
     for n in range(1, nb + 1):
         # do all up to p600
-        temp, gd = p100(n, index, a0, a1, rh, inc, incl, temp, root, nflag, perc, gd)
+        temp, gd = p100(n, index, a0, a1, rh, inc, incl,
+                        temp, root, nflag, perc, gd)
 
     # now we run p600
     n = nb
@@ -59,14 +114,17 @@ def p100(n, index, a0, a1, rh, inc, incl, temp, root, nflag, perc, gd):
     elif b[n - 1] > incl:
         frac[n - 1] = sb[n - 1] * math.cos(incl)
     else:
-        x1 = math.cos(incl) * sb[n - 1] * (math.acos(-math.tan(b[n - 1]) * (1 / math.tan(incl)))) / math.pi
-        x2 = math.sin(incl) * math.cos(b[n - 1]) * math.sin(math.acos(-math.tan(b[n - 1]) / math.tan(incl))) / math.pi
+        x1 = math.cos(
+            incl) * sb[n - 1] * (math.acos(-math.tan(b[n - 1]) * (1 / math.tan(incl)))) / math.pi
+        x2 = math.sin(incl) * math.cos(b[n - 1]) * math.sin(
+            math.acos(-math.tan(b[n - 1]) / math.tan(incl))) / math.pi
         frac[n - 1] = x1 + x2
 
     spec, mass, xlt, xltprim, press, pprim = sublime(index, temp)
 
     sun = f0 * frac[n - 1] * (1 - a0) / rh ** 2
     # print("a1: ",a1, "sigma: ",sigma, "temp: ", temp, "q: ", q, "root: ",root,"rootT: ",root,"press: ",press,"xlt: ",xlt)
+    logging.debug(f"a1: {a1} sigma: {sigma} ...")
     radiat = (1 - a1) * sigma * temp ** 4
     evap = q * root / rootT * press * xlt
     phi = radiat + evap - sun
@@ -98,7 +156,8 @@ def p100(n, index, a0, a1, rh, inc, incl, temp, root, nflag, perc, gd):
                 # go to 300
                 p300(n, rh, inc, perc)
             else:
-                sys.exit('error calculating sublimation')
+                logging.error('error calculating sublimation')
+                sys.exit(1)
 
     nflag += 1
     # go to 100
