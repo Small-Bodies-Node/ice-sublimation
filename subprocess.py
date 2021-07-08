@@ -1,3 +1,27 @@
+'''
+Description
+-----------
+Calculates the latent heat of sublimation and the vapor pressure of
+the solid for various ices and the derivatives thereof
+
+
+Modification History
+--------------------
+Mark Van Seluos July 2021
+- Rewrote sublime.f in python as subprocess.py
+
+Brian Prager 06/25/2010
+- Commented out the C02 pressures derived by G.N. Brown Jr. and W.T. Ziegler
+in "Vapor Pressure and the Heats of Vaporization and Sublimation of Liquids
+and Solids of interest in cryogenics below 1-atm pressure" (Advances in
+Cryogenic Engineering, 25, 1980) [Also used to derive C0]. The script could
+end up looking at temperatures below the minimum accepted value for their
+derivation, and would crash the script. The pressure was then replaced with
+the Antoine Equation, which is justified in another paper. (Given in comments
+above the equation).
+
+'''
+
 import sys
 
 # Constants
@@ -9,18 +33,19 @@ ergcal = 6.953e-17
 proton = 1.67e-24
 
 
-def sublime(index, temp):
+# If temp <=0, then use the species dependent starting point.
+
+def sublime(species, temp):
     # ###Setup
     mass, xlt, xltprim, press, pprim = None, None, None, None, None
 
-    species = ['H2O', 'H2O_CH4', 'CO2', 'CO']
-    tstart = [190., 190., 100., 60.]
-
-    # ###Start of Logic
-    spec = species[index]
-
+    tstart = {'H2O': 190,
+              'H2O_CH4': 190,
+              'CO2': 100,
+              'CO': 60,
+              }
     if temp <= 0:
-        temp = tstart[index]
+        temp = tstart[species]
 
     t = temp
     t2 = t * t
@@ -29,9 +54,9 @@ def sublime(index, temp):
     t5 = t4 * t
     t6 = t3 * t3
 
-    if spec == 'H2O':
+    if species == 'H2O':
         # 100
-        mass = 18
+        mass = 18.
         xlt = 12420. - 4.8 * t
         xltprim = -4.8
 
@@ -44,8 +69,8 @@ def sublime(index, temp):
 
         mass, xlt, xltprim, press, pprim = p5100(mass, xlt, xltprim, p, pp)
 
-    elif spec == 'H2O_CH4':
-        mass = 18
+    elif species == 'H2O_CH4':
+        mass = 18.
         xlt = 12160. + .5 * t - .033 * t2
         xltprim = 0.5 - 0.066 * t
 
@@ -58,8 +83,8 @@ def sublime(index, temp):
 
         mass, xlt, xltprim, press, pprim = p5100(mass, xlt, xltprim, p, pp)
 
-    elif spec == 'CO2':
-        mass = 44
+    elif species == 'CO2':
+        mass = 44.
         xlt = 6269. + 9.877 * t - .130997 * t2 + 6.2735e-4 * t3 - 1.2699e-6 * t4
         xltprim = 9.877 - .261994 * t + 1.88205e-3 * t2 - 5.0796e-6 * t3
 
@@ -70,7 +95,7 @@ def sublime(index, temp):
 
         mass, xlt, xltprim, press, pprim = p5100(mass, xlt, xltprim, p, pp)
 
-    elif spec == 'CO':
+    elif species == 'CO':
         mass = 28
         if t > 68.127:
             sys.exit(f'error in CO temp, T = {t}')
@@ -101,9 +126,7 @@ def sublime(index, temp):
 
         mass, xlt, xltprim, press, pprim = p5100(mass, xlt, xltprim, p, pp)
 
-    # print('Completed Sublime')
-    print("Press: ",press,"pprim: ",pprim, "Temp: ", temp, 'Species: ',spec,"Mass: ",mass,"Xlt: ",xlt,"xltprim", xltprim,)
-    return spec, mass, xlt, xltprim, press, pprim
+    return species, mass, xlt, xltprim, press, pprim, temp
 
 
 def p5100(mass, xlt, xltprim, p, pp):
