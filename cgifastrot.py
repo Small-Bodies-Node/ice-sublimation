@@ -1,4 +1,4 @@
-'''
+"""
     Description
     -----------
     This program calculates the average sublimation per unit area for
@@ -17,7 +17,7 @@
 
     sb is the set of values of sin(b) at which the sublimation is calculated.
     b is latitude, frac is the effective value of cos(theta) for each latitude
-    In this version, there are 41 steps in latitude (variable nb in the
+    In this version, there are 181 steps in latitude (variable nb in the
     data statement).
 
    Modification History
@@ -26,8 +26,7 @@
    - Rewrote cgifastrot.f in python as cgifastrot.py
    - Increased the latitude step size from 41 to 181.
    - Thanks to this increased step size and having more accurate trig functions
-   than were available in fortran77, this led to a notable improvement to the
-   calculation results.
+   than were available in fortran77, there is very slight alteration in the final results.
 
     B. Prager 06/24
     - Original fastrot.f renamed to cgifastrot.f to make a distinction.
@@ -36,7 +35,7 @@
     Albedo. Parameter 3: Infared Albedo. Parameter 4: Heliocentric Distance. Parameter 5:
     inclination.
     - Initialized the parameters such that they can accept nine characters of data.
-'''
+"""
 
 import math
 from subprocess import *
@@ -143,7 +142,8 @@ def run_model(species, a_v, a_ir, rh, inc, temp=-1):
     perc = 0
     gd = None
     for n in range(0, nb):
-        temp, gd, perc = main_loop(n, species, a_v, a_ir, rh, incl, temp, root, nflag, perc, gd)
+        # print('next step,', n)
+        temp, gd, perc, nflag = main_loop(n, species, a_v, a_ir, rh, incl, temp, root, nflag, perc, gd)
 
     zbar = 0.
     for nn in range(0, nb - 1):
@@ -209,12 +209,11 @@ def main_loop(n, species, a_v, a_ir, rh, incl, temp, root, nflag, perc, gd):
         gd is used in the case of nflag >= 10,000,000
     perc : float
     """
-    tp = 0
     root_t = math.sqrt(temp)
     if b[n] <= -incl:
         frac[n] = 0
         z[n] = 0
-        return temp, gd, perc
+        return temp, gd, perc, nflag
     elif b[n] > incl:
         frac[n] = sb[n] * math.cos(incl)
 
@@ -243,19 +242,22 @@ def main_loop(n, species, a_v, a_ir, rh, incl, temp, root, nflag, perc, gd):
 
     if abs(phi / sun) < 1e-4 or abs(phi) < 1e-4:
         gd, perc = calc_perc(n, rh, perc)
-    if nflag >= 10000000:
+        return temp, gd, perc, nflag
+    if nflag >= 1000:
         subdis = z[gd] * 4 * math.pi * rh * 149.6e11
         if perc != 0:
             if (subdis / perc) < 1e-02:
                 z[n] = 0
                 gd, perc = calc_perc(n, rh, perc)
+                return temp, gd, perc, nflag
             else:
                 logging.error('error calculating sublimation')
                 sys.exit(1)
 
     nflag += 1
+    temp, gd, perc, nflag = main_loop(n, species, a_v, a_ir, rh, incl, temp, root, nflag, perc, gd)
 
-    return temp, gd, perc
+    return temp, gd, perc, nflag
 
 
 def calc_perc(n, rh, perc):
@@ -271,6 +273,6 @@ rh_in = 3.98
 inc_in = 90
 
 # speciesList = ['H2O', 'H2O_CH4', 'CO2', 'CO']
-index_in = speciesList.index('CO2') + 1
+index_in = speciesList.index('H2O') + 1
 
 run_model(index_in, a_v_in, a_ir_in, rh_in, inc_in, )
