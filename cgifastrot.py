@@ -142,7 +142,6 @@ def run_model(species, a_v, a_ir, rh, inc, temp=-1):
     perc = 0
     gd = None
     for n in range(0, nb):
-        # print('next step,', n)
         temp, gd, perc, nflag = main_loop(n, species, a_v, a_ir, rh, incl, temp, root, nflag, perc, gd)
 
     zbar = 0.
@@ -157,11 +156,11 @@ def run_model(species, a_v, a_ir, rh, inc, temp=-1):
         "Species": species,
         "Obliquity": inc,
         "r_H": rh,
-        "rlog": rlog,
+        "rlog": "{:.3f}".format(rlog),
         "a_v": a_v,
         "a_ir": a_ir,
-        "Zbar": zbar,
-        "Zlog": zlog,
+        "Zbar": "{:.3e}".format(zbar),
+        "Zlog": "{:.3f}".format(zlog),
     }))
 
     return species, inc, rh, rlog, a_v, a_ir, zbar, zlog
@@ -241,14 +240,14 @@ def main_loop(n, species, a_v, a_ir, rh, incl, temp, root, nflag, perc, gd):
     temp = tp
 
     if abs(phi / sun) < 1e-4 or abs(phi) < 1e-4:
-        gd, perc = calc_perc(n, rh, perc)
+        gd, perc = calc_perc(n, rh, incl, perc)
         return temp, gd, perc, nflag
     if nflag >= 1000:
         subdis = z[gd] * 4 * math.pi * rh * 149.6e11
         if perc != 0:
             if (subdis / perc) < 1e-02:
                 z[n] = 0
-                gd, perc = calc_perc(n, rh, perc)
+                gd, perc = calc_perc(n, rh, incl, perc)
                 return temp, gd, perc, nflag
             else:
                 logging.error('error calculating sublimation')
@@ -260,7 +259,8 @@ def main_loop(n, species, a_v, a_ir, rh, incl, temp, root, nflag, perc, gd):
     return temp, gd, perc, nflag
 
 
-def calc_perc(n, rh, perc):
+def calc_perc(n, rh, incl, perc):
+    logging.info('Incl: ', incl, 'Lat: ', b[n])
     gd = n
     perc = perc + z[n] * 4 * math.pi * rh * 149.6e11
     return gd, perc
