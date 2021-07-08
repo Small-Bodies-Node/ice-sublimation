@@ -60,28 +60,37 @@ for idx in range(1, nb):
 
 speciesList = ['H2O', 'H2O_CH4', 'CO2', 'CO']
 
+logging.basicConfig(level=logging.DEBUG)
+
 
 def run_model(species, a_v, a_ir, rh, inc, temp=-1):
     """
     A call of this function replicates the behavior of the original cgifastrot.f script.
     After reading validating the input parameters, run_model() will iterate through mainloop().
 
+
     Parameters
     ----------
+
     species : str or int
         Desired ice species to be considered
         - 1: 'H2O'
         - 2: 'H20_CH4'
         - 3: 'CO2'
         - 4: 'CO'
+
     a_v : float (a_v > 0)
         Visual albedo
+
     a_ir : float
         Infrared albedo
+
     rh : float
         Heliocentric distance (in au)
+
     inc : float
         Obliquity - 90 - angle between rotation axis and the solar direction
+
     temp: float
         Initial temperature. If this parameter is not specified, a species
         dependent initial value will be used:
@@ -93,22 +102,31 @@ def run_model(species, a_v, a_ir, rh, inc, temp=-1):
 
     Returns
     -------
+
     species: str
         Inputted species
+
     inc: float
         Inputted obliquity
+
     rh: float
         Inputted heliocentric distance (in au)
+
     rlog: float
         rlog = log10(rh)
+
     a_v : float (a_v > 0)
         Inputted visual albedo
+
     a_ir : float
         Inputted infrared albedo
+
     zbar: float
         Average sublimation per unit area
+
     zlog: float
         zlog = log10(zbar)
+
     """
 
     if isinstance(species, int):
@@ -127,11 +145,14 @@ def run_model(species, a_v, a_ir, rh, inc, temp=-1):
         sys.exit(1)
 
     if a_v < 0:
-        logging.error(f'A visual albedo of {a_v} is not a valid input. Please input a value greater than 0.')
+        logging.error(
+            f'A visual albedo of {a_v} is not a valid input.'
+            ' Please input a value greater than 0.')
         sys.exit(1)
 
     logging.info("Input Parameters:")
-    logging.info(f'Species = {species}, Avis = {a_v}, Air = {a_ir}, r_H = {rh}, Incl = {inc}')
+    logging.info(
+        f'Species = {species}, Avis = {a_v}, Air = {a_ir}, r_H = {rh}, Incl = {inc}')
 
     incl = (90 - inc) * math.pi / 180
 
@@ -142,7 +163,8 @@ def run_model(species, a_v, a_ir, rh, inc, temp=-1):
     perc = 0
     gd = None
     for n in range(0, nb):
-        temp, gd, perc, nflag = main_loop(n, species, a_v, a_ir, rh, incl, temp, root, nflag, perc, gd)
+        temp, gd, perc, nflag = main_loop(
+            n, species, a_v, a_ir, rh, incl, temp, root, nflag, perc, gd)
 
     zbar = 0.
     for nn in range(0, nb - 1):
@@ -217,8 +239,18 @@ def main_loop(n, species, a_v, a_ir, rh, incl, temp, root, nflag, perc, gd):
         frac[n] = sb[n] * math.cos(incl)
 
     else:
-        x1 = math.cos(incl) * sb[n] * (math.acos(-math.tan(b[n]) * (1 / math.tan(incl)))) / math.pi
-        x2 = math.sin(incl) * math.cos(b[n]) * math.sin(math.acos(-math.tan(b[n]) / math.tan(incl))) / math.pi
+        x1 = (
+            math.cos(incl)
+            * sb[n]
+            * (math.acos(-math.tan(b[n]) * (1 / math.tan(incl))))
+            / math.pi
+        )
+        x2 = (
+            math.sin(incl)
+            * math.cos(b[n])
+            * math.sin(math.acos(-math.tan(b[n]) / math.tan(incl)))
+            / math.pi
+        )
         frac[n] = x1 + x2
 
     spec, mass, xlt, xltprim, press, pprim, temp = sublime(species, temp)
@@ -254,13 +286,14 @@ def main_loop(n, species, a_v, a_ir, rh, incl, temp, root, nflag, perc, gd):
                 sys.exit(1)
 
     nflag += 1
-    temp, gd, perc, nflag = main_loop(n, species, a_v, a_ir, rh, incl, temp, root, nflag, perc, gd)
+    temp, gd, perc, nflag = main_loop(
+        n, species, a_v, a_ir, rh, incl, temp, root, nflag, perc, gd)
 
     return temp, gd, perc, nflag
 
 
 def calc_perc(n, rh, incl, perc):
-    logging.info('Incl: ', incl, 'Lat: ', b[n])
+    logging.info('Incl: %f, Lat: %f', incl, b[n])
     gd = n
     perc = perc + z[n] * 4 * math.pi * rh * 149.6e11
     return gd, perc
