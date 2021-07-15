@@ -293,7 +293,7 @@ def run_model(species, a_v, a_ir, rh, inc, temp=-1):
     gd = None
     for n in range(0, nb):
         temp, gd, perc, nflag = main_loop(
-            n, species, a_v, a_ir, rh, incl, temp, root, nflag, perc, gd)
+            n, species, a_v, a_ir, rh, inc, incl, temp, root, nflag, perc, gd)
 
     zbar = 0.
     for nn in range(0, nb - 1):
@@ -317,7 +317,7 @@ def run_model(species, a_v, a_ir, rh, inc, temp=-1):
     return species, inc, rh, rlog, a_v, a_ir, zbar, zlog
 
 
-def main_loop(n, species, a_v, a_ir, rh, incl, temp, root, nflag, perc, gd):
+def main_loop(n, species, a_v, a_ir, rh, inc, incl, temp, root, nflag, perc, gd):
     """
     Parameters
     ----------
@@ -332,6 +332,8 @@ def main_loop(n, species, a_v, a_ir, rh, incl, temp, root, nflag, perc, gd):
         Inputted infrared albedo
     rh: float
         Inputted heliocentric distance (in au)
+    inc : float
+        Inputted obliquity expressed in degrees
     incl : float
         Inputted obliquity expressed in radians.
     temp : float
@@ -402,14 +404,14 @@ def main_loop(n, species, a_v, a_ir, rh, incl, temp, root, nflag, perc, gd):
     temp = tp
 
     if abs(phi / sun) < 1e-4 or abs(phi) < 1e-4:
-        gd, perc = calc_perc(n, rh, incl, perc)
+        gd, perc = calc_perc(n, rh, inc, perc)
         return temp, gd, perc, nflag
     if nflag >= 5000:
         subdis = z[gd] * 4 * math.pi * rh * 149.6e11
         if perc != 0:
             if (subdis / perc) < 1e-02:
                 z[n] = 0
-                gd, perc = calc_perc(n, rh, incl, perc)
+                gd, perc = calc_perc(n, rh, inc, perc)
                 return temp, gd, perc, nflag
             else:
                 logging.error('error calculating sublimation')
@@ -417,13 +419,13 @@ def main_loop(n, species, a_v, a_ir, rh, incl, temp, root, nflag, perc, gd):
 
     nflag += 1
     temp, gd, perc, nflag = main_loop(
-        n, species, a_v, a_ir, rh, incl, temp, root, nflag, perc, gd)
+        n, species, a_v, a_ir, rh, inc, incl, temp, root, nflag, perc, gd)
 
     return temp, gd, perc, nflag
 
 
-def calc_perc(n, rh, incl, perc):
-    logging.info('Incl: %f, Lat: %f', incl, b[n])
+def calc_perc(n, rh, inc, perc):
+    logging.info('Incl: %f, Lat: %f', inc, b[n])
     gd = n
     perc = perc + z[n] * 4 * math.pi * rh * 149.6e11
     return gd, perc
