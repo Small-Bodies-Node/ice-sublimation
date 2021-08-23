@@ -1,22 +1,61 @@
 """
     Description
     -----------
-    Runs fastrot.py over a desired parameter space.
+    survey_fastrot.py runs the main ice sublimation code (fastrot.py) over a desired parameter space.
 
-    The calculation results are stored in the files `results/output.json` and `results/output.csv`.
+    The code accepts both list or standalone values for each of the five input parameters. It then takes the product
+    of these sets and computes the rate of sublimation for each combination of input parameters.
+
+
+    The parameters listed below correspond are describing the elements of the five parameter sets
+    (species_set, Av_set, Air_set, rh_set, obl_set)
+
+    Parameters
+    ----------
+    species : str or int
+        Desired ice species to be considered
+        - 1: 'H2O'
+        - 2: 'H20_CH4'
+        - 3: 'CO2'
+        - 4: 'CO'
+    Av : float (Av > 0)
+        Visual albedo
+    Air : float
+        Infrared albedo
+    rh : float
+        Heliocentric distance (in au)
+    obliquity : float
+        Obliquity - 90 - angle between rotation axis and the solar direction
+
+
+    Returns
+    -------
+    output_json : dict
+        Python dictionary containing the exact output which is also stored within `results/output.json`
+        Its only key-value pair, output_json["results"], is a list of the output dictionaries from each call of fastrot.py.
+        The keys for each of these inner dictionaries are:
+            - "species" : str
+            - "Av" : float
+            - "Air" : float
+            - "r_H" : float
+            - "rlog" : float
+            - "obliquity" : float
+            - "Zbar" : float
+            - "Zlog" : float
+    'results/output.json` : .json file
+    `results/output.csv` : .csv file
 """
 import os
 import csv
+import fastrot
+from itertools import product
+from json import dump
 
 
-def survey_fastrot(species_list, Av_list, Air_list, rh_list, obl_list):
-    import fastrot
-    from itertools import product
-    from json import dump
-
+def survey_fastrot(species_set, Av_set, Air_set, rh_set, obl_set):
     search_space = []
     arguments = locals()
-    for param in [species_list, Av_list, Air_list, rh_list, obl_list]:
+    for param in [species_set, Av_set, Air_set, rh_set, obl_set]:
         search_space.append(param if isinstance(param, list) else [param])
     results = []
     for inputs in product(*search_space):
@@ -41,22 +80,22 @@ def survey_fastrot(species_list, Av_list, Air_list, rh_list, obl_list):
 description = "Use this program to iterate `fastrot.py` over a desired parameter space."
 
 if __name__ == '__main__':
-    speciesList = ['H2O', 'H2O-CH4', 'CO2', 'CO']
-
     import argparse
+
+    speciesList = ['H2O', 'H2O-CH4', 'CO2', 'CO']
 
     parser = argparse.ArgumentParser(description=description,
                                      formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('--species_list', nargs='+', metavar='species', type=str, required=True,
+    parser.add_argument('--species_set', nargs='+', metavar='species', type=str, required=True,
                         help="Desired ice species to be considered. \n"
                              "The valid inputs are: " + ', '.join(speciesList)),
-    parser.add_argument('--Av_list', nargs='+', metavar='visual albedo', type=float, required=True, )
-    parser.add_argument('--Air_list', nargs='+', metavar='infrared albedo', type=float, required=True, )
-    parser.add_argument('--rh_list', nargs='+', metavar='heliocentric_distance', type=float, required=True, )
-    parser.add_argument('--obl_list', nargs='+', metavar='obliquity', type=float, required=True, )
+    parser.add_argument('--Av_set', nargs='+', metavar='visual albedo', type=float, required=True, )
+    parser.add_argument('--Air_set', nargs='+', metavar='infrared albedo', type=float, required=True, )
+    parser.add_argument('--rh_set', nargs='+', metavar='heliocentric_distance', type=float, required=True, )
+    parser.add_argument('--obl_set', nargs='+', metavar='obliquity', type=float, required=True, )
 
     try:
         args = parser.parse_args()
-        survey_fastrot(args.species_list, args.Av_list, args.Air_list, args.rh_list, args.obl_list)
+        survey_fastrot(args.species_set, args.Av_set, args.Air_set, args.rh_set, args.obl_set)
     except Exception as e:
         print(e)
