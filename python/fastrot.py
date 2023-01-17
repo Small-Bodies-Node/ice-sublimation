@@ -489,12 +489,7 @@ if __name__ == "__main__":
         description="\n\n".join([description1, description2]),
         formatter_class=argparse.RawTextHelpFormatter,
     )
-    parser.add_argument(
-        "species",
-        type=str,
-        help="Desired ice species to be considered. \n"
-        "The valid inputs are: " + ", ".join(speciesList),
-    )
+    parser.add_argument("species", choices=speciesList, help="Ice species to consider.")
     parser.add_argument(
         "--Av",
         metavar="visual_albedo",
