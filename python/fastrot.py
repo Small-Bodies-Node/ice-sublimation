@@ -324,22 +324,18 @@ def run_model(species, Av, Air, rh, obliquity, nlat, temperature0=-1, verbosity=
 
     z = [0] * nlat  # sublimation rate as a function of latitude
     sin_latitude = [-1]
-    latitude = [math.asin(sin_latitude[0])]
     delta_sin_latitude = 2.0 / (nlat - 1)  # sin(latitude) step size
 
     for idx in range(1, nlat):
         sin_latitude.append(sin_latitude[0] + idx * delta_sin_latitude)
-        latitude.append(math.asin(sin_latitude[-1]))
 
     niter_total = 0  # total number of iterations for all latitudes
-    perc = 0
     for i in range(0, nlat):
-        frac = 0  # insolation scale factor at latitude
         latitude = math.asin(sin_latitude[i])
+        frac = 0  # insolation scale factor at latitude
 
         if latitude <= -incl:
-            # unilluminated latitude
-            continue
+            frac = 0
         elif latitude > incl:
             frac = sin_latitude[i] * math.cos(incl)
         else:
@@ -358,8 +354,24 @@ def run_model(species, Av, Air, rh, obliquity, nlat, temperature0=-1, verbosity=
             frac = x1 + x2
 
         niter = 0  # number of iterations for this latitude
-        z[i], temperature, perc, niter = main_loop(
-            species, Av, Air, rh, obliquity, latitude, frac, temperature0, niter, perc
+        temperature = temperature0
+        if frac > 1e-10:  # avoid "Numerical result out of range"
+            while niter < 100000:
+                z[i], temperature, converged = main_loop(
+                    species, Av, Air, rh, frac, temperature
+                )
+                niter += 1
+                if converged:
+                    break
+            else:
+                raise RuntimeError("Energy balance iteration did not converge.")
+
+        logging.debug(
+            "obliquity: %f, latitude: %f, z: %g, iterations: %d",
+            obliquity,
+            latitude,
+            z[i],
+            niter,
         )
         niter_total += niter
 
@@ -387,10 +399,9 @@ def run_model(species, Av, Air, rh, obliquity, nlat, temperature0=-1, verbosity=
     return output
 
 
-def main_loop(
-    species, Av, Air, rh, obliquity, latitude, frac, temperature, niter, perc
-):
-    """Recursive function to calculate temperature and sublimation rate.
+def main_loop(species, Av, Air, rh, frac, temperature):
+    """Calculate temperature and sublimation rate.
+
 
     Parameters
     ----------
@@ -406,23 +417,11 @@ def main_loop(
     rh: float
         Heliocentric distance (au)
 
-    obliquity : float
-        Obliquity (degrees)
-
-    latitude : float
-        Latitude being considered
-
     frac : float
         Insolation scale factor of this obliquity and latitude
 
     temperature : float
         Estimated temperature at latitude (Kelvins).
-
-    niter : int
-        Number of times main_loop() has been called.
-
-    perc: float
-        This is one of the three parameters which is updated by main_loop().
 
 
     Returns
@@ -433,14 +432,11 @@ def main_loop(
     temperature : float
         Updated temperature estimate (Kelvins).
 
-    perc : float
-
-    niter : int
-        Number of times main_loop() has been called.
+    converged : bool
+        `True` if the energy equation is balanced.
 
     """
 
-    niter += 1
     mass, xlt, xltprim, press, pprim, temperature = sublime(species, temperature)
     root = 1 / math.sqrt(mass * 2 * math.pi * boltz)
     root_t = math.sqrt(temperature)
@@ -460,33 +456,9 @@ def main_loop(
     dt = math.copysign(min(10, abs(phi / phipri / 2)), phi / phipri)
     temperature -= dt
 
-    if abs(phi / sun) < 1e-4 or abs(phi) < 1e-4:
-        # last iteration
-        perc = calc_perc(z, rh, obliquity, latitude, perc)
-        return z, temperature, perc, niter
+    converged = abs(phi / sun) < 1e-4 or abs(phi) < 1e-4
 
-    # limit number of iterations
-    if niter > 100000:
-        subdis = z * 4 * math.pi * rh * 149.6e11
-        if perc != 0:
-            if (subdis / perc) < 1e-02:
-                z = 0
-                perc = calc_perc(z, rh, obliquity, latitude, perc)
-                return z, temperature, perc, niter
-            else:
-                raise RuntimeError("error calculating sublimation")
-
-    # next iteration
-    niter += 1
-    return main_loop(
-        species, Av, Air, rh, obliquity, latitude, frac, temperature, niter, perc
-    )
-
-
-def calc_perc(z, rh, obliquity, latitude, perc):
-    perc = perc + z * 4 * math.pi * rh * 149.6e11
-    logging.debug("Obliquity: %f, Latitude: %f, Perc: %g", obliquity, latitude, perc)
-    return perc
+    return z, temperature, converged
 
 
 ############
