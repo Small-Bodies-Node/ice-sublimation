@@ -15,8 +15,8 @@ provides the vapor pressure and latent heat, as well as their derivatives, for a
 given temperature.
 
 sb is the set of values of sin(b) at which the sublimation is calculated. b is
-latitude, frac is the effective value of cos(theta) for each latitude In this
-version, there are 181 steps in latitude (variable nb in the data statement).
+latitude, frac is the effective value of cos(theta) for each latitude.  In this
+version, the number of latitude steps is an input variable.
 
 Modification History
 --------------------
@@ -24,6 +24,8 @@ Michael S. P. Kelley January 2023
   - Make file output optional.
   - Improve error handing.
   - Clarify definition of obliquity.
+  - Number of latitude steps added as a parameter.
+  - Simplify the code a bit.
 
 Mark Van Selous July 2021
   - Rewrote cgifastrot.f and sublime.f in python as fastrot.py
@@ -49,21 +51,6 @@ import sys
 import json
 import logging
 
-nb = 18
-z = [0] * nb
-frac = [0] * nb
-q = 1
-
-prec = 0
-delsb = 2.0 / (nb - 1)
-
-sb = [-1]
-b = [math.asin(sb[0])]
-
-for idx in range(1, nb):
-    sb.append(sb[0] + idx * delsb)
-    b.append(math.asin(sb[-1]))
-
 speciesList = ["H2O", "H2O-CH4", "CO2", "CO"]
 
 # Constants
@@ -82,48 +69,54 @@ tstart = {
 }
 
 
-def sublime(species, temp):
+def sublime(species, temperature):
     """
-    Description
-    -----------
-    Calculates the latent heat of sublimation and the vapor pressure of
-    the solid for various ices and the derivatives thereof
+    Calculates the latent heat of sublimation and the vapor pressure of the
+    solid for various ices and the derivatives thereof.
+
 
     Parameters
     ----------
     species : str
-        Desired ice species to be considered. The valid inputs are:
-        - 'H2O'
-        - 'H20_CH4'
-        - 'CO2'
-        - 'CO'
-    temp: float
-        Temperature (in Kelvin) If temp <= 0 K, then the code defaults to a species
-        dependent initial value:
-        - H2O: 190 K
-        - H2O-CH4: 190 K
-        - CO2: 100 K
-        - CO: 60 K
+        Ice species to consider:
+          - 'H2O'
+          - 'H2O_CH4'
+          - 'CO2'
+          - 'CO'
+
+    temperature: float
+        Temperature (Kelvin).  If temperature <= 0 K, then the code defaults to
+        a species dependent initial value:
+          - H2O: 190 K
+          - H2O-CH4: 190 K
+          - CO2: 100 K
+          - CO: 60 K
+
 
     Returns
     -------
     mass : float
+
     xlt : float
+
     xltprim : float
+
     press : float
+
     pprim : float
-    temp : float
-        The output temperature is either the input temperature
-        or the species dependent initial temperature if the input
-        temperature is less than 0 K.
+
+    temperature : float
+        The output temperature is either the input temperature or the species
+        dependent initial temperature if the input temperature is less than 0 K.
+
     """
     mass, xlt, xltprim, press, pprim = None, None, None, None, None
 
     # If temp <=0, then use the species dependent starting point.
-    if temp <= 0:
-        temp = tstart[species]
+    if temperature <= 0:
+        temperature = tstart[species]
 
-    t = temp
+    t = temperature
     t2 = t * t
     t3 = t2 * t
     t4 = t2 * t2
@@ -221,80 +214,90 @@ def sublime(species, temp):
     xlt = xlt * ergcal
     xltprim = xltprim * ergcal
 
-    return mass, xlt, xltprim, press, pprim, temp
+    return mass, xlt, xltprim, press, pprim, temperature
 
 
-def run_model(species, Av, Air, rh, obliquity, temp=-1, verbosity=1):
+def run_model(species, Av, Air, rh, obliquity, nlat, temperature0=-1, verbosity=1):
     """
-    A call of this function replicates the behavior of the original cgifastrot.f script.
-    After reading validating the input parameters, run_model() will iterate through mainloop().
+    A call of this function replicates the behavior of the original cgifastrot.f
+    script. After reading validating the input parameters, run_model() will
+    iterate through mainloop().
+
 
     Parameters
     ----------
-    species : str or int
-        Desired ice species to be considered
-        - 1: 'H2O'
-        - 2: 'H20_CH4'
-        - 3: 'CO2'
-        - 4: 'CO'
+
+    species : str
+        Ice species to consider
+          - H2O
+          - H2O_CH4
+          - CO2
+          - CO
+
     Av : float (Av > 0)
         Visual albedo
+
     Air : float
         Infrared albedo
+
     rh : float
         Heliocentric distance (in au)
+
     obliquity : float
-        Obliquity, angle between the object's rotational axis and its orbital axis.
-    temp: float
-        Initial temperature. If this parameter is not specified, a species
+        Obliquity, angle between the object's rotational axis and its orbital
+        axis.
+
+    nlat : int
+        Number of latitude bands to calculate.
+
+    temperature0: float
+        Initial temperature guess. If this parameter is not specified, a species
         dependent initial value will be used:
-        - H2O: 190 K
-        - H2O-CH4: 190 K
-        - CO2: 100 K
-        - CO: 60 K'
+          - H2O: 190 K
+          - H2O-CH4: 190 K
+          - CO2: 100 K
+          - CO: 60 K'
+
     verbosity: int
         Used to specify the logging level
-        - verbosity = 0: Only the final results (or a fatal error) will be displayed).
-        - verbosity = 1: The input parameters are also displayed.
-        - Otherwise: Additional output will be displayed for debugging purposes.
+          - verbosity = 0: Only the final results (or a fatal error) will be
+            displayed).
+          - verbosity = 1: The input parameters are also displayed.
+          - Otherwise: Additional output will be displayed for debugging
+            purposes.
 
 
     Returns
     -------
     species: str
         Inputted species
+
     obliquity: float
         Inputted obliquity
+
     rh: float
-        Inputted heliocentric distance (in au)
+        Inputted heliocentric distance (au)
+
     rlog: float
         rlog = log10(rh)
+
     Av : float (Av > 0)
         Inputted visual albedo
+
     Air : float
         Inputted infrared albedo
+
     zbar: float
         Average sublimation (in molecules cm^-2 s^-1)
+
     zlog: float
         zlog = log10(zbar)
+
     """
 
-    if isinstance(species, int):
-        if species in range(1, len(speciesList) + 1):
-            # The species indexing if offset by +1 to make the inputs consistent with the original fortran script.
-            species = speciesList[species - 1]
-        else:
-            logging.error(
-                f"The inputted index of {species} is not currently supported \n"
-                f"Please input one of the following integers or strings: \n"
-                f"1: 'H2O', 2: 'H2O-CH4', 3: 'CO2', 4: 'CO'"
-            )
-            raise ValueError("Invalid species.")
     if species not in speciesList:
         logging.error(
-            f'The inputted species of "{species}" is not currently supported \n'
-            f"Please input one of the following integers or strings: \n"
-            f"1: 'H2O', 2: 'H2O-CH4', 3: 'CO2', 4: 'CO'"
+            f'The inputted species of "{species}" is not one of {speciesList}'
         )
         raise ValueError("Invalid species.")
 
@@ -317,20 +320,52 @@ def run_model(species, Av, Air, rh, obliquity, temp=-1, verbosity=1):
         f"Species = {species}, Avis = {Av}, Air = {Air}, r_H = {rh}, Obl = {obliquity}"
     )
 
-    mass, xlt, xltprim, press, pprim, temp = sublime(species, temp)
-    root = 1 / math.sqrt(mass * 2 * math.pi * boltz)
+    incl = (90 - obliquity) * math.pi / 180  # radians
 
-    nflag = 1
+    z = [0] * nlat  # sublimation rate as a function of latitude
+    sin_latitude = [-1]
+    latitude = [math.asin(sin_latitude[0])]
+    delta_sin_latitude = 2.0 / (nlat - 1)  # sin(latitude) step size
+
+    for idx in range(1, nlat):
+        sin_latitude.append(sin_latitude[0] + idx * delta_sin_latitude)
+        latitude.append(math.asin(sin_latitude[-1]))
+
+    niter_total = 0  # total number of iterations for all latitudes
     perc = 0
-    gd = None
-    for n in range(0, nb):
-        temp, gd, perc, nflag = main_loop(
-            n, species, Av, Air, rh, obliquity, temp, root, nflag, perc, gd
+    for i in range(0, nlat):
+        frac = 0  # insolation scale factor at latitude
+        latitude = math.asin(sin_latitude[i])
+
+        if latitude <= -incl:
+            # unilluminated latitude
+            continue
+        elif latitude > incl:
+            frac = sin_latitude[i] * math.cos(incl)
+        else:
+            x1 = (
+                math.cos(incl)
+                * sin_latitude[i]
+                * (math.acos(-math.tan(latitude) * (1 / math.tan(incl))))
+                / math.pi
+            )
+            x2 = (
+                math.sin(incl)
+                * math.cos(latitude)
+                * math.sin(math.acos(-math.tan(latitude) / math.tan(incl)))
+                / math.pi
+            )
+            frac = x1 + x2
+
+        niter = 0  # number of iterations for this latitude
+        z[i], temperature, perc, niter = main_loop(
+            species, Av, Air, rh, obliquity, latitude, frac, temperature0, niter, perc
         )
+        niter_total += niter
 
     zbar = 0.0
-    for nn in range(0, nb - 1):
-        zbar = zbar + 0.5 * (z[nn] + z[nn + 1]) * delsb
+    for i in range(0, nlat - 1):
+        zbar = zbar + 0.5 * (z[i] + z[i + 1]) * delta_sin_latitude
 
     zbar = zbar / 2
     zlog = math.log10(zbar)
@@ -349,123 +384,109 @@ def run_model(species, Av, Air, rh, obliquity, temp=-1, verbosity=1):
 
     logging.info("Final Results:")
     logging.info(output)
-
     return output
 
 
-def main_loop(n, species, Av, Air, rh, obliquity, temp, root, nflag, perc, gd):
-    """
+def main_loop(
+    species, Av, Air, rh, obliquity, latitude, frac, temperature, niter, perc
+):
+    """Recursive function to calculate temperature and sublimation rate.
+
     Parameters
     ----------
-    n : int
-        counter (ranging from 0 to nb-1) which tracks
     species: str
         Inputted species
+
     Av : float
-        (Av > 0)
-        Visual albedo
+        Visual albedo (Av > 0)
+
     Air : float
         Infrared albedo
+
     rh: float
         Heliocentric distance (au)
+
     obliquity : float
         Obliquity (degrees)
-    temp : float
-        Temperature (in Kelvin). This is one of the three parameters which is updated by main_loop().
-    root : float
-        root is given by: root = 1 / sqrt(mass * 2 * pi * boltz)
-        Below is an approximation for the four possible values:
-        root(H2O) ~= 6.194e18
-        root(H2O-CH4) ~= 6.194e18 (= root(H20))
-        root(CO2) ~= 3.962e18
-        root(CO) ~= 4.966e18
-    nflag : int
-        Counter for the total number of times main_loop() has been called.
+
+    latitude : float
+        Latitude being considered
+
+    frac : float
+        Insolation scale factor of this obliquity and latitude
+
+    temperature : float
+        Estimated temperature at latitude (Kelvins).
+
+    niter : int
+        Number of times main_loop() has been called.
+
     perc: float
         This is one of the three parameters which is updated by main_loop().
-    gd : None / int
-        Denotes the greatest index, n, at which calc_perc() was called.
-        If gd = None, then calc_perc() has not been called yet.
-        This is one of the three parameters which is updated by main_loop().
+
 
     Returns
     -------
-    temp : float
-        Temperature (in Kelvin). This is one of the three parameters which is updated by main_loop().
-    gd : None / float
-        gd is used in the case of nflag >= 5,000
+    z : float
+        Sublimation rate.
+
+    temperature : float
+        Updated temperature estimate (Kelvins).
+
     perc : float
+
+    niter : int
+        Number of times main_loop() has been called.
+
     """
 
-    incl = (90 - obliquity) * math.pi / 180  # radians
-    root_t = math.sqrt(temp)
-
-    if b[n] <= -incl:
-        frac[n] = 0
-        z[n] = 0
-        return temp, gd, perc, nflag
-    elif b[n] > incl:
-        frac[n] = sb[n] * math.cos(incl)
-
-    else:
-        x1 = (
-            math.cos(incl)
-            * sb[n]
-            * (math.acos(-math.tan(b[n]) * (1 / math.tan(incl))))
-            / math.pi
-        )
-        x2 = (
-            math.sin(incl)
-            * math.cos(b[n])
-            * math.sin(math.acos(-math.tan(b[n]) / math.tan(incl)))
-            / math.pi
-        )
-        frac[n] = x1 + x2
-
-    mass, xlt, xltprim, press, pprim, temp = sublime(species, temp)
-    sun = f0 * frac[n] * (1.0 - Av) / rh**2
-    radiat = (1 - Air) * sigma * temp**4
-    evap = q * root / root_t * press * xlt
+    niter += 1
+    mass, xlt, xltprim, press, pprim, temperature = sublime(species, temperature)
+    root = 1 / math.sqrt(mass * 2 * math.pi * boltz)
+    root_t = math.sqrt(temperature)
+    sun = f0 * frac * (1.0 - Av) / rh**2
+    radiat = (1 - Air) * sigma * temperature**4
+    evap = root / root_t * press * xlt
     phi = radiat + evap - sun
-    z[n] = max(evap / xlt, 1e-30)
+    z = max(evap / xlt, 1e-30)
 
-    drad = 4 * radiat / temp
+    drad = 4 * radiat / temperature
     x1 = pprim * xlt
     x2 = press * xltprim
 
-    devap = q * root / root_t * (x1 + x2)
+    devap = root / root_t * (x1 + x2)
     phipri = drad + devap
 
     dt = math.copysign(min(10, abs(phi / phipri / 2)), phi / phipri)
-    tp = temp - dt
-    temp = tp
+    temperature -= dt
 
     if abs(phi / sun) < 1e-4 or abs(phi) < 1e-4:
-        gd, perc = calc_perc(n, rh, obliquity, perc)
-        return temp, gd, perc, nflag
-    if nflag >= 100000:
-        subdis = z[gd] * 4 * math.pi * rh * 149.6e11
+        # last iteration
+        perc = calc_perc(z, rh, obliquity, latitude, perc)
+        return z, temperature, perc, niter
+
+    # limit number of iterations
+    if niter > 100000:
+        subdis = z * 4 * math.pi * rh * 149.6e11
         if perc != 0:
             if (subdis / perc) < 1e-02:
-                z[n] = 0
-                gd, perc = calc_perc(n, rh, obliquity, perc)
-                return temp, gd, perc, nflag
+                z = 0
+                perc = calc_perc(z, rh, obliquity, latitude, perc)
+                return z, temperature, perc, niter
             else:
                 raise RuntimeError("error calculating sublimation")
 
-    nflag += 1
-    temp, gd, perc, nflag = main_loop(
-        n, species, Av, Air, rh, obliquity, temp, root, nflag, perc, gd
+    # next iteration
+    niter += 1
+    return main_loop(
+        species, Av, Air, rh, obliquity, latitude, frac, temperature, niter, perc
     )
 
-    return temp, gd, perc, nflag
 
-
-def calc_perc(n, rh, obliquity, perc):
-    logging.debug("Incl: %f, Lat: %f", obliquity, b[n])
-    gd = n
-    perc = perc + z[n] * 4 * math.pi * rh * 149.6e11
-    return gd, perc
+def calc_perc(z, rh, obliquity, latitude, perc):
+    perc = perc + z * 4 * math.pi * rh * 149.6e11
+    logging.debug("Obliquity: %f, Latitude: %f, Perc: %g", obliquity, latitude, perc)
+    return perc
 
 
 ############
@@ -514,6 +535,9 @@ if __name__ == "__main__":
         required=True,
     )
     parser.add_argument(
+        "--nlat", metavar="n", type=int, default=181, help="Number of latitude steps"
+    )
+    parser.add_argument(
         "--temp",
         metavar="temperature",
         type=float,
@@ -550,6 +574,7 @@ if __name__ == "__main__":
                 args.Air,
                 args.rh,
                 args.obl,
+                args.nlat,
                 args.temp,
                 args.verbosity,
             ),
