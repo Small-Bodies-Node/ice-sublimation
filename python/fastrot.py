@@ -23,6 +23,7 @@ Michael S. P. Kelley January 2023
   - Clarify definition of obliquity.
   - Number of latitude steps added as a parameter.
   - Simplify the code a bit.
+  - Force vapor pressure to 0 for very low CO2 and CO temperatures.
 
 Mark Van Selous July 2021
   - Rewrote cgifastrot.f and sublime.f in python as fastrot.py
@@ -53,7 +54,7 @@ speciesList = ["H2O", "H2O-CH4", "CO2", "CO"]
 # Constants
 sigma = 5.67e-5
 f0 = 1.39e6
-dynmm = 1.333e3
+dyncm2 = 1.33322e3  # conversion from Torr to dyne/cm2
 boltz = 1.38e-16
 ergcal = 6.953e-17
 proton = 1.67e-24
@@ -145,23 +146,28 @@ def sublime(species, temperature):
         xlt = 6269.0 + 9.877 * t - 0.130997 * t2 + 6.2735e-4 * t3 - 1.2699e-6 * t4
         xltprim = 9.877 - 0.261994 * t + 1.88205e-3 * t2 - 5.0796e-6 * t3
 
-        press = (
-            21.3807649e0
-            - 2570.647e0 / t
-            - 7.78129489e4 / t2
-            + 4.32506256e6 / t3
-            - 1.20671368e8 / t4
-            + 1.34966306e9 / t5
-        )
-        pprim = (
-            2570.647e0 / t2
-            + 1.556258978e5 / t3
-            - 12.97518768e6 / t4
-            + 4.82685472e8 / t5
-            - 6.7483153e9 / t6
-        )
-        press = dynmm * 10.0**press
-        pprim = pprim * press
+        if t <= 20:
+            logging.warn("CO2 temperature < 20 K")
+            press = 0
+            pprim = 0
+        else:
+            press = (
+                21.3807649e0
+                - 2570.647e0 / t
+                - 7.78129489e4 / t2
+                + 4.32506256e6 / t3
+                - 1.20671368e8 / t4
+                + 1.34966306e9 / t5
+            )
+            pprim = (
+                2570.647e0 / t2
+                + 1.556258978e5 / t3
+                - 12.97518768e6 / t4
+                + 4.82685472e8 / t5
+                - 6.7483153e9 / t6
+            )
+            press = dyncm2 * 10.0**press
+            pprim = pprim * press
 
     elif species == "CO":
         mass = 28
@@ -202,10 +208,25 @@ def sublime(species, temperature):
                 + 11634986.8e0 / t5
                 - 60159709.0e0 / t6
             )
-            press = dynmm * 10.0**press
+            press = dyncm2 * 10.0**press
             pprim = pprim * press
+
         else:
-            sys.exit(f"error in CO temp, T= {t}")
+            logging.warn("CO temperature < 14 K")
+            xlt = (
+                1893
+                + 7.331 * t
+                + 0.01096 * t2
+                - 0.0060658 * t3
+                + 1.166e-4 * t4
+                - 7.8957e-7 * t5
+            )
+            xltprim = (
+                7.331 + 0.02192 * t - 0.0181974 * t2 + 4.664e-4 * t3 - 3.94785e-6 * t4
+            )
+
+            press = 0
+            pprim = 0
 
     mass = mass * proton
     xlt = xlt * ergcal
@@ -352,7 +373,7 @@ def run_model(species, Av, Air, rh, obliquity, nlat, temperature0=-1, verbosity=
 
         niter = 0  # number of iterations for this latitude
         temperature = temperature0
-        if frac > 1e-10:  # avoid "Numerical result out of range"
+        if frac > 0:
             while niter < 100000:
                 z[i], temperature, converged = main_loop(
                     species, Av, Air, rh, frac, temperature
@@ -366,7 +387,7 @@ def run_model(species, Av, Air, rh, obliquity, nlat, temperature0=-1, verbosity=
         logging.debug(
             "obliquity: %f, latitude: %f, z: %g, iterations: %d",
             obliquity,
-            latitude,
+            latitude * 180 / math.pi,
             z[i],
             niter,
         )

@@ -1,5 +1,9 @@
 # fastrot: Python version
 
+## Notes
+
+This version of fastrot will force the vapor pressure of CO and CO2 to 0 for very low temperatures (see code for limits) to avoid extrapolating polynomials well beyond their valid ranges.
+
 ## Attribution
 
 Please cite Cowan & A'Hearn (1979, M&P 21, 155; [NASA ADS 1979M&P....21..155C](https://ui.adsabs.harvard.edu/abs/1979M%26P....21..155C); [DOI 10.1007/BF00897085](https://dx.doi.org/10.1007/BF00897085)) for the concepts behind these tools.
