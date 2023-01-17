@@ -11,32 +11,38 @@ If you find the Python code useful in your projects, also cite:
 Replace the year as appropriate for the version you are using.  Also replace *** with the first ~7 characters of the git commit hash.  This can be shown in GitHub on the [commits page](https://github.com/Small-Bodies-Node/ice-sublimation/commits/main).  The hash prefix to use is the unique string along the right hand side (e.g., c338c13).
 
 ## Requirements
-This script does not have any dependencies outside of the Python 3 standard library. 
+
+This script does not have any dependencies outside of the Python 3 standard library.
 
 ## Usage
+
 ```
 fastrot.py [-h] --Av visual albedo --Air infrared albedo --rh
-	heliocentric_distance --obl obliquity [--temp temperature]
+ heliocentric_distance --obl obliquity [--temp temperature]
         [--verbosity verbosity]
         species
 
 example:
 python fastrot.py 'H2O' --Av=0.00 --Air=0.05 --rh=3.98 --obl=90
 ```
+
 1. species - string (or integer for backwards compatibility) specifying the desired ice: (1) H2O, (2) H2O-CH4 clathrate, (3) CO2, (4) CO.
 2. Av - visual albedo
 3. Air - infrared albedo
 4. rh - heliocentric distance in au
-5. obliquity - 90 - angle between rotation axis and the solar direction
+5. obliquity - angle between the object's rotational axis and its orbital axis
 
 ## survey_fastrot.py
+
 This script can be used to call `fastrot.py` over a parameter space with a single call.
 
 ### Requirements
-`survey_fastrot.py` does not introduce any additional packages outside the standard library. 
+
+`survey_fastrot.py` does not introduce any additional packages outside the standard library.
 The only added requirement is that both `survey_fastrot.py` and `fastrot.py` are kept within the same directory.
 
 ### Usage
+
 ```
 usage: survey_fastrot.py [-h] --species_list species [species ...] --Av_list visual albedo [visual albedo ...] --Air_list infrared albedo [infrared albedo ...]
                          --rh_list heliocentric_distance [heliocentric_distance ...] --obl_list obliquity [obliquity ...]
@@ -44,16 +50,17 @@ usage: survey_fastrot.py [-h] --species_list species [species ...] --Av_list vis
 example:
 python survey_fastrot.py --species_list 'H2O' 'H2O-CH4' --Av_list 0.05 0.10 --Air_list 0 --rh_list 3.98 --obl_list 40 41 42
 ```
+
 1. species_list species [species ...]
-                        Desired ice species to be considered. 
+                        Desired ice species to be considered.
                         The valid inputs are: H2O, H2O-CH4, CO2, CO
 2. Av_list - visual albedo [visual albedo ...]
 3. Air_list - infrared albedo [infrared albedo ...]
 4. rh_list - heliocentric_distance [heliocentric_distance ...]
 5. obl_list - obliquity [obliquity ...]
 
-
 ## Data
+
 The [data](data/) directory provides the pole-on case, which is identical both to the non-rotating case and to the case of zero thermal inertia. The visual Bond albedo is 5% and the thermal emissivity is 100%. The parameters were chosen to provide a direct comparison between the updated model and the example output from the original FORTRAN code.
 
 ## Notice
@@ -64,4 +71,4 @@ This program is free software: you can redistribute it and/or modify it under th
 
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
+You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.

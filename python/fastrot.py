@@ -1,43 +1,47 @@
 """
-    Description
-    -----------
-    This program calculates the average sublimation per unit area for
-    a rapidly rotating cometary nucleus.  For a
-    sufficiently rapid rotation, or equivalently for sufficiently high
-    thermal inertia, a parallel of latitude is an isotherm and this
-    is assumed by the program.
+Description
+-----------
+This program calculates the average sublimation per unit area for a rapidly
+rotating cometary nucleus.  For a sufficiently rapid rotation, or equivalently
+for sufficiently high thermal inertia, a parallel of latitude is an isotherm and
+this is assumed by the program.
 
-    PROGRAM ITERATES ENERGY BALANCE EQUATION BY NEWTON-RAPHSON METHOD
-    TO GET EQUILIBRIUM TEMPERATURE.  SIMPSON'S RULE IS USED TO
-    INTEGRATE OVER LATITUDE.
+PROGRAM ITERATES ENERGY BALANCE EQUATION BY NEWTON-RAPHSON METHOD TO GET
+EQUILIBRIUM TEMPERATURE.  SIMPSON'S RULE IS USED TO INTEGRATE OVER LATITUDE.
 
-    The properties of the ice are handled in the separate subroutine
-    sublime which provides the vapor pressure and latent heat, as well
-    as their derivatives, for a given temperature.
+The properties of the ice are handled in the separate subroutine sublime which
+provides the vapor pressure and latent heat, as well as their derivatives, for a
+given temperature.
 
-    sb is the set of values of sin(b) at which the sublimation is calculated.
-    b is latitude, frac is the effective value of cos(theta) for each latitude
-    In this version, there are 181 steps in latitude (variable nb in the
-    data statement).
+sb is the set of values of sin(b) at which the sublimation is calculated. b is
+latitude, frac is the effective value of cos(theta) for each latitude In this
+version, there are 181 steps in latitude (variable nb in the data statement).
 
-   Modification History
-   --------------------
-   Michael S. P. Kelley January 2023
-   - Make file output optional and improve error handing.
-   Mark Van Selous July 2021
-   - Rewrote cgifastrot.f and sublime.f in python as fastrot.py
-   - Increased the latitude step size from 41 to 181.
-   - Thanks to this increased step size and having more accurate trig functions
-   than were available in fortran77, there is very slight alteration in the final results.
+Modification History
+--------------------
+Michael S. P. Kelley January 2023
+  - Make file output optional.
+  - Improve error handing.
+  - Clarify definition of obliquity.
 
-    B. Prager 06/24
-    - Original fastrot.f renamed to cgifastrot.f to make a distinction.
-    - Removed file i/o from cgifastrot.f to avoid permissions issues with cgi scripts.
-    - Added command line input of parameters. Parameter 1: Species. Parameter 2: Visual
-    Albedo. Parameter 3: Infared Albedo. Parameter 4: Heliocentric Distance. Parameter 5:
-    inclination.
-    - Initialized the parameters such that they can accept nine characters of data.
+Mark Van Selous July 2021
+  - Rewrote cgifastrot.f and sublime.f in python as fastrot.py
+  - Increased the latitude step size from 41 to 181.
+  - Thanks to this increased step size and having more accurate trig functions
+    than were available in fortran77, there is very slight alteration in the
+    final results.
+
+B. Prager 06/24
+  - Original fastrot.f renamed to cgifastrot.f to make a distinction.
+  - Removed file i/o from cgifastrot.f to avoid permissions issues with cgi
+    scripts.
+  - Added command line input of parameters. Parameter 1: Species. Parameter 2:
+    Visual Albedo. Parameter 3: Infared Albedo. Parameter 4: Heliocentric
+    Distance. Parameter 5: inclination.
+  - Initialized the parameters such that they can accept nine characters of
+    data.
 """
+
 import csv
 import math
 import os
@@ -240,7 +244,7 @@ def run_model(species, Av, Air, rh, obliquity, temp=-1, verbosity=1):
     rh : float
         Heliocentric distance (in au)
     obliquity : float
-        Obliquity - 90 - angle between rotation axis and the solar direction
+        Obliquity, angle between the object's rotational axis and its orbital axis.
     temp: float
         Initial temperature. If this parameter is not specified, a species
         dependent initial value will be used:
@@ -313,8 +317,6 @@ def run_model(species, Av, Air, rh, obliquity, temp=-1, verbosity=1):
         f"Species = {species}, Avis = {Av}, Air = {Air}, r_H = {rh}, Obl = {obliquity}"
     )
 
-    incl = (90 - obliquity) * math.pi / 180
-
     mass, xlt, xltprim, press, pprim, temp = sublime(species, temp)
     root = 1 / math.sqrt(mass * 2 * math.pi * boltz)
 
@@ -323,7 +325,7 @@ def run_model(species, Av, Air, rh, obliquity, temp=-1, verbosity=1):
     gd = None
     for n in range(0, nb):
         temp, gd, perc, nflag = main_loop(
-            n, species, Av, Air, rh, obliquity, incl, temp, root, nflag, perc, gd
+            n, species, Av, Air, rh, obliquity, temp, root, nflag, perc, gd
         )
 
     zbar = 0.0
@@ -351,7 +353,7 @@ def run_model(species, Av, Air, rh, obliquity, temp=-1, verbosity=1):
     return output
 
 
-def main_loop(n, species, Av, Air, rh, obliquity, incl, temp, root, nflag, perc, gd):
+def main_loop(n, species, Av, Air, rh, obliquity, temp, root, nflag, perc, gd):
     """
     Parameters
     ----------
@@ -361,22 +363,20 @@ def main_loop(n, species, Av, Air, rh, obliquity, incl, temp, root, nflag, perc,
         Inputted species
     Av : float
         (Av > 0)
-        Inputted visual albedo
+        Visual albedo
     Air : float
-        Inputted infrared albedo
+        Infrared albedo
     rh: float
-        Inputted heliocentric distance (in au)
+        Heliocentric distance (au)
     obliquity : float
-        Inputted obliquity expressed in degrees
-    incl : float
-        Inclination (derived from the inputted obliquity) expressed in radians.
+        Obliquity (degrees)
     temp : float
         Temperature (in Kelvin). This is one of the three parameters which is updated by main_loop().
     root : float
         root is given by: root = 1 / sqrt(mass * 2 * pi * boltz)
         Below is an approximation for the four possible values:
         root(H2O) ~= 6.194e18
-        root(H2O-CH4) ~= 6.194e18 (= root(H20))per
+        root(H2O-CH4) ~= 6.194e18 (= root(H20))
         root(CO2) ~= 3.962e18
         root(CO) ~= 4.966e18
     nflag : int
@@ -396,7 +396,10 @@ def main_loop(n, species, Av, Air, rh, obliquity, incl, temp, root, nflag, perc,
         gd is used in the case of nflag >= 5,000
     perc : float
     """
+
+    incl = (90 - obliquity) * math.pi / 180  # radians
     root_t = math.sqrt(temp)
+
     if b[n] <= -incl:
         frac[n] = 0
         z[n] = 0
@@ -452,7 +455,7 @@ def main_loop(n, species, Av, Air, rh, obliquity, incl, temp, root, nflag, perc,
 
     nflag += 1
     temp, gd, perc, nflag = main_loop(
-        n, species, Av, Air, rh, obliquity, incl, temp, root, nflag, perc, gd
+        n, species, Av, Air, rh, obliquity, temp, root, nflag, perc, gd
     )
 
     return temp, gd, perc, nflag
