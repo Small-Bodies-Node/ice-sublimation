@@ -6,8 +6,9 @@ rotating cometary nucleus.  For a sufficiently rapid rotation, or equivalently
 for sufficiently high thermal inertia, a parallel of latitude is an isotherm and
 this is assumed by the program.
 
-PROGRAM ITERATES ENERGY BALANCE EQUATION BY NEWTON-RAPHSON METHOD TO GET
-EQUILIBRIUM TEMPERATURE.  SIMPSON'S RULE IS USED TO INTEGRATE OVER LATITUDE.
+The method integrates an energy balance equation with the Newton-Raphson method
+to derive an equilibrium temperature.  Simpson's rule is used to integrate over
+latitude.
 
 The properties of the ice are handled in the separate subroutine sublime which
 provides the vapor pressure and latent heat, as well as their derivatives, for a
@@ -476,8 +477,9 @@ description1 = (
 )
 
 description2 = (
-    "PROGRAM ITERATES ENERGY BALANCE EQUATION BY NEWTON-RAPHSON METHOD TO GET EQUILIBRIUM TEMPERATURE."
-    " SIMPSON'S RULE IS USED TO INTEGRATE OVER LATITUDE."
+    "The method integrates an energy balance equation with the Newton-Raphson method"
+    " to derive an equilibrium temperature.  Simpson's rule is used to integrate over"
+    " latitude."
 )
 
 if __name__ == "__main__":
