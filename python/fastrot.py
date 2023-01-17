@@ -14,9 +14,6 @@ The properties of the ice are handled in the separate subroutine sublime which
 provides the vapor pressure and latent heat, as well as their derivatives, for a
 given temperature.
 
-sb is the set of values of sin(b) at which the sublimation is calculated. b is
-latitude, frac is the effective value of cos(theta) for each latitude.  In this
-version, the number of latitude steps is an input variable.
 
 Modification History
 --------------------
