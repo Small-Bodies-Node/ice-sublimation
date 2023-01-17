@@ -45,7 +45,6 @@ B. Prager 06/24
 
 import csv
 import math
-import os
 import sys
 import json
 import logging
