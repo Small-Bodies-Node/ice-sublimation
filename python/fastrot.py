@@ -60,7 +60,7 @@ for idx in range(1, nb):
     sb.append(sb[0] + idx * delsb)
     b.append(math.asin(sb[-1]))
 
-speciesList = ['H2O', 'H2O-CH4', 'CO2', 'CO']
+speciesList = ["H2O", "H2O-CH4", "CO2", "CO"]
 
 # Constants
 sigma = 5.67e-5
@@ -70,11 +70,12 @@ boltz = 1.38e-16
 ergcal = 6.953e-17
 proton = 1.67e-24
 
-tstart = {'H2O': 190,
-          'H2O-CH4': 190,
-          'CO2': 100,
-          'CO': 60,
-          }
+tstart = {
+    "H2O": 190,
+    "H2O-CH4": 190,
+    "CO2": 100,
+    "CO": 60,
+}
 
 
 def sublime(species, temp):
@@ -125,55 +126,92 @@ def sublime(species, temp):
     t5 = t4 * t
     t6 = t3 * t3
 
-    if species == 'H2O':
-        mass = 18.
-        xlt = 12420. - 4.8 * t
+    if species == "H2O":
+        mass = 18.0
+        xlt = 12420.0 - 4.8 * t
         xltprim = -4.8
 
         # from Marti & Mauersberger (1993 GRL 20, 363)
         press = -2663.5 / t + 12.537
-        press = 10. * 10. ** press
+        press = 10.0 * 10.0**press
         pprim = (2663.5 / t2) * press
 
-    elif species == 'H2O-CH4':
-        mass = 18.
-        xlt = 12160. + .5 * t - .033 * t2
+    elif species == "H2O-CH4":
+        mass = 18.0
+        xlt = 12160.0 + 0.5 * t - 0.033 * t2
         xltprim = 0.5 - 0.066 * t
 
         # from Marti & Mauersberger (1993 GRL 20, 363)
         press = -2663.5 / t + 12.537
-        press = 10. * 10. ** press
+        press = 10.0 * 10.0**press
         pprim = (+2663.5 / t2) * press
 
-    elif species == 'CO2':
-        mass = 44.
-        xlt = 6269. + 9.877 * t - .130997 * t2 + 6.2735e-4 * t3 - 1.2699e-6 * t4
-        xltprim = 9.877 - .261994 * t + 1.88205e-3 * t2 - 5.0796e-6 * t3
+    elif species == "CO2":
+        mass = 44.0
+        xlt = 6269.0 + 9.877 * t - 0.130997 * t2 + 6.2735e-4 * t3 - 1.2699e-6 * t4
+        xltprim = 9.877 - 0.261994 * t + 1.88205e-3 * t2 - 5.0796e-6 * t3
 
-        press = 21.3807649e0 - 2570.647e0/t - 7.78129489e4/t2 + 4.32506256e6/t3 - 1.20671368e8/t4 + 1.34966306e9/t5
-        pprim = 2570.647e0/t2 + 1.556258978e5/t3 - 12.97518768e6/t4 + 4.82685472e8/t5 - 6.7483153e9/t6
-        press = dynmm * 10. ** press
+        press = (
+            21.3807649e0
+            - 2570.647e0 / t
+            - 7.78129489e4 / t2
+            + 4.32506256e6 / t3
+            - 1.20671368e8 / t4
+            + 1.34966306e9 / t5
+        )
+        pprim = (
+            2570.647e0 / t2
+            + 1.556258978e5 / t3
+            - 12.97518768e6 / t4
+            + 4.82685472e8 / t5
+            - 6.7483153e9 / t6
+        )
+        press = dynmm * 10.0**press
         pprim = pprim * press
 
-    elif species == 'CO':
+    elif species == "CO":
         mass = 28
         if t > 68.127:
-            sys.exit(f'error in CO temp, T = {t}')
+            sys.exit(f"error in CO temp, T = {t}")
         elif t > 61.544:
-            xlt = 1855 + 3.253 * t - .06833 * t2
-            xltprim = 3.253 - .13666 * t
-            press = 16.8655152e0 - 748.151471e0/t - 5.84330795e0/t2 + 3.93853859e0/t3
-            pprim = 748.15147e0/t2 + 11.6866159e0/t3 - 11.81561577e0/t4
+            xlt = 1855 + 3.253 * t - 0.06833 * t2
+            xltprim = 3.253 - 0.13666 * t
+            press = (
+                16.8655152e0 - 748.151471e0 / t - 5.84330795e0 / t2 + 3.93853859e0 / t3
+            )
+            pprim = 748.15147e0 / t2 + 11.6866159e0 / t3 - 11.81561577e0 / t4
         elif t >= 14.0:
-            xlt = 1893 + 7.331 * t + .01096 * t2 - .0060658 * t3 + 1.166e-4 * t4 - 7.8957e-7 * t5
-            xltprim = 7.331 + .02192 * t - .0181974 * t2 + 4.664e-4 * t3 - 3.94785e-6 * t4
+            xlt = (
+                1893
+                + 7.331 * t
+                + 0.01096 * t2
+                - 0.0060658 * t3
+                + 1.166e-4 * t4
+                - 7.8957e-7 * t5
+            )
+            xltprim = (
+                7.331 + 0.02192 * t - 0.0181974 * t2 + 4.664e-4 * t3 - 3.94785e-6 * t4
+            )
 
-            press = 18.0741183e0 - 769.842078e0 / t - 12148.7759e0 / t2 + 2.7350095e5 / t3 - 2.9087467e6 / t4 + 1.20319418e7 / t5
-            pprim = 769.842078e0 / t2 + 24297.5518 / t3 - 820502.85e0 / t4 + 11634986.8e0 / t5 - 60159709.e0 / t6
-            press = dynmm * 10. ** press
+            press = (
+                18.0741183e0
+                - 769.842078e0 / t
+                - 12148.7759e0 / t2
+                + 2.7350095e5 / t3
+                - 2.9087467e6 / t4
+                + 1.20319418e7 / t5
+            )
+            pprim = (
+                769.842078e0 / t2
+                + 24297.5518 / t3
+                - 820502.85e0 / t4
+                + 11634986.8e0 / t5
+                - 60159709.0e0 / t6
+            )
+            press = dynmm * 10.0**press
             pprim = pprim * press
         else:
-            sys.exit(f'error in CO temp, T= {t}')
+            sys.exit(f"error in CO temp, T= {t}")
 
     mass = mass * proton
     xlt = xlt * ergcal
@@ -242,32 +280,38 @@ def run_model(species, Av, Air, rh, obliquity, temp=-1, verbosity=1):
             # The species indexing if offset by +1 to make the inputs consistent with the original fortran script.
             species = speciesList[species - 1]
         else:
-            logging.error(f"The inputted index of {species} is not currently supported \n"
-                          f"Please input one of the following integers or strings: \n"
-                          f"1: 'H2O', 2: 'H2O-CH4', 3: 'CO2', 4: 'CO'")
-            raise ValueError('Invalid species.')
+            logging.error(
+                f"The inputted index of {species} is not currently supported \n"
+                f"Please input one of the following integers or strings: \n"
+                f"1: 'H2O', 2: 'H2O-CH4', 3: 'CO2', 4: 'CO'"
+            )
+            raise ValueError("Invalid species.")
     if species not in speciesList:
-        logging.error(f"The inputted species of \"{species}\" is not currently supported \n"
-                      f"Please input one of the following integers or strings: \n"
-                      f"1: 'H2O', 2: 'H2O-CH4', 3: 'CO2', 4: 'CO'")
-        raise ValueError('Invalid species.')
+        logging.error(
+            f'The inputted species of "{species}" is not currently supported \n'
+            f"Please input one of the following integers or strings: \n"
+            f"1: 'H2O', 2: 'H2O-CH4', 3: 'CO2', 4: 'CO'"
+        )
+        raise ValueError("Invalid species.")
 
     if Av < 0:
         logging.error(
-            f'A visual albedo of {Av} is not a valid input.'
-            ' Please input a value greater than 0.')
-        raise ValueError('Invalid visual albedo.')
+            f"A visual albedo of {Av} is not a valid input."
+            " Please input a value greater than 0."
+        )
+        raise ValueError("Invalid visual albedo.")
 
     if verbosity == 0:
-            logging.basicConfig(level='WARNING')
+        logging.basicConfig(level="WARNING")
     elif verbosity == 1:
-        logging.basicConfig(level='INFO')
+        logging.basicConfig(level="INFO")
     else:
-        logging.basicConfig(level='DEBUG')
+        logging.basicConfig(level="DEBUG")
 
     logging.info("Input Parameters:")
     logging.info(
-        f'Species = {species}, Avis = {Av}, Air = {Air}, r_H = {rh}, Obl = {obliquity}')
+        f"Species = {species}, Avis = {Av}, Air = {Air}, r_H = {rh}, Obl = {obliquity}"
+    )
 
     incl = (90 - obliquity) * math.pi / 180
 
@@ -279,9 +323,10 @@ def run_model(species, Av, Air, rh, obliquity, temp=-1, verbosity=1):
     gd = None
     for n in range(0, nb):
         temp, gd, perc, nflag = main_loop(
-            n, species, Av, Air, rh, obliquity, incl, temp, root, nflag, perc, gd)
+            n, species, Av, Air, rh, obliquity, incl, temp, root, nflag, perc, gd
+        )
 
-    zbar = 0.
+    zbar = 0.0
     for nn in range(0, nb - 1):
         zbar = zbar + 0.5 * (z[nn] + z[nn + 1]) * delsb
 
@@ -375,8 +420,8 @@ def main_loop(n, species, Av, Air, rh, obliquity, incl, temp, root, nflag, perc,
         frac[n] = x1 + x2
 
     mass, xlt, xltprim, press, pprim, temp = sublime(species, temp)
-    sun = f0 * frac[n] * (1. - Av) / rh ** 2
-    radiat = (1 - Air) * sigma * temp ** 4
+    sun = f0 * frac[n] * (1.0 - Av) / rh**2
+    radiat = (1 - Air) * sigma * temp**4
     evap = q * root / root_t * press * xlt
     phi = radiat + evap - sun
     z[n] = max(evap / xlt, 1e-30)
@@ -403,77 +448,125 @@ def main_loop(n, species, Av, Air, rh, obliquity, incl, temp, root, nflag, perc,
                 gd, perc = calc_perc(n, rh, obliquity, perc)
                 return temp, gd, perc, nflag
             else:
-                raise RuntimeError('error calculating sublimation')
+                raise RuntimeError("error calculating sublimation")
 
     nflag += 1
     temp, gd, perc, nflag = main_loop(
-        n, species, Av, Air, rh, obliquity, incl, temp, root, nflag, perc, gd)
+        n, species, Av, Air, rh, obliquity, incl, temp, root, nflag, perc, gd
+    )
 
     return temp, gd, perc, nflag
 
 
 def calc_perc(n, rh, obliquity, perc):
-    logging.debug('Incl: %f, Lat: %f', obliquity, b[n])
+    logging.debug("Incl: %f, Lat: %f", obliquity, b[n])
     gd = n
     perc = perc + z[n] * 4 * math.pi * rh * 149.6e11
     return gd, perc
 
 
 ############
-description1 = "This program calculates the average sublimation per unit area for a rapidly rotating cometary" \
-               " nucleus. For a sufficiently rapid rotation, or equivalently for sufficiently high thermal inertia," \
-               " a parallel of latitude is an isotherm and this is assumed by the program."
+description1 = (
+    "This program calculates the average sublimation per unit area for a rapidly rotating cometary"
+    " nucleus. For a sufficiently rapid rotation, or equivalently for sufficiently high thermal inertia,"
+    " a parallel of latitude is an isotherm and this is assumed by the program."
+)
 
-description2 = "PROGRAM ITERATES ENERGY BALANCE EQUATION BY NEWTON-RAPHSON METHOD TO GET EQUILIBRIUM TEMPERATURE." \
-               " SIMPSON'S RULE IS USED TO INTEGRATE OVER LATITUDE."
+description2 = (
+    "PROGRAM ITERATES ENERGY BALANCE EQUATION BY NEWTON-RAPHSON METHOD TO GET EQUILIBRIUM TEMPERATURE."
+    " SIMPSON'S RULE IS USED TO INTEGRATE OVER LATITUDE."
+)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="\n\n".join([description1, description2]),
-                                     formatter_class=argparse.RawTextHelpFormatter,)
-    parser.add_argument('species', type=str,
-                        help="Desired ice species to be considered. \n"
-                             "The valid inputs are: " + ', '.join(speciesList))
-    parser.add_argument('--Av', metavar='visual_albedo', type=float, required=True,)
-    parser.add_argument('--Air', metavar='infrared_albedo', type=float, required=True,)
-    parser.add_argument('--rh', metavar='heliocentric_distance', type=float, required=True,)
-    parser.add_argument('--obl', metavar='obliquity', type=float, required=True,)
-    parser.add_argument('--temp', metavar='temperature', type=float, default=-1,
-                        help="Not passing a starting temperature will default to a species dependent starting value:\n"
-                             "H2O: 190 K\n"
-                             "H2O-CH4: 190 K\n"
-                             "CO2: 100 K\n"
-                             "CO: 60 K\n")
-    parser.add_argument('-o', metavar='filename', dest='filename',
-                        help="Save results to this file name")
-    parser.add_argument('--format', choices=['json', 'csv'], default='json',
-                        help="output file format")
-    parser.add_argument('--verbosity', '-v', metavar='verbosity', type=int, default=0,
-                        help="By default (verbosity = 0), only the final result will be displayed in stdout."
-                             " A  verbosity of 1 will output the logger messages as well.")
+    parser = argparse.ArgumentParser(
+        description="\n\n".join([description1, description2]),
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
+    parser.add_argument(
+        "species",
+        type=str,
+        help="Desired ice species to be considered. \n"
+        "The valid inputs are: " + ", ".join(speciesList),
+    )
+    parser.add_argument(
+        "--Av",
+        metavar="visual_albedo",
+        type=float,
+        required=True,
+    )
+    parser.add_argument(
+        "--Air",
+        metavar="infrared_albedo",
+        type=float,
+        required=True,
+    )
+    parser.add_argument(
+        "--rh",
+        metavar="heliocentric_distance",
+        type=float,
+        required=True,
+    )
+    parser.add_argument(
+        "--obl",
+        metavar="obliquity",
+        type=float,
+        required=True,
+    )
+    parser.add_argument(
+        "--temp",
+        metavar="temperature",
+        type=float,
+        default=-1,
+        help="Not passing a starting temperature will default to a species dependent starting value:\n"
+        "H2O: 190 K\n"
+        "H2O-CH4: 190 K\n"
+        "CO2: 100 K\n"
+        "CO: 60 K\n",
+    )
+    parser.add_argument(
+        "-o", metavar="filename", dest="filename", help="Save results to this file name"
+    )
+    parser.add_argument(
+        "--format", choices=["json", "csv"], default="json", help="output file format"
+    )
+    parser.add_argument(
+        "--verbosity",
+        "-v",
+        metavar="verbosity",
+        type=int,
+        default=0,
+        help="By default (verbosity = 0), only the final result will be displayed in stdout."
+        " A verbosity of 1 will output the logger messages as well.",
+    )
 
     try:
         args = parser.parse_args()
         results = {
-            'status': 'success',
-            'results': run_model(args.species, args.Av, args.Air, args.rh, args.obl, args.temp, args.verbosity),
+            "status": "success",
+            "results": run_model(
+                args.species,
+                args.Av,
+                args.Air,
+                args.rh,
+                args.obl,
+                args.temp,
+                args.verbosity,
+            ),
         }
     except Exception as e:
-        results = {
-            'status': 'failure',
-            'message': str(e)
-        }
+        results = {"status": "failure", "message": str(e)}
 
     print(json.dumps(results))
 
-    if results['status'] != 'failure' and args.filename is not None:
-        if args.format == 'json':
-            with open(args.filename, 'w') as json_file:
+    if results["status"] != "failure" and args.filename is not None:
+        if args.format == "json":
+            with open(args.filename, "w") as json_file:
                 json.dump(results, json_file)
         else:
-            fieldnames = list(results['results'].keys())
-            with open(args.filename, 'w') as csv_file:
+            fieldnames = list(results["results"].keys())
+            with open(args.filename, "w") as csv_file:
                 writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
                 writer.writeheader()
-                writer.writerow(results['results'])
+                writer.writerow(results["results"])

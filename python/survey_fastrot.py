@@ -61,14 +61,14 @@ def survey_fastrot(species_set, Av_set, Air_set, rh_set, obl_set):
     for inputs in product(*search_space):
         results.append(fastrot.run_model(*inputs))
 
-    output_json = {'results': results}
-    json_path = os.path.join(os.getcwd(), 'results', 'output.json')
-    with open(json_path, 'w') as json_file:
+    output_json = {"results": results}
+    json_path = os.path.join(os.getcwd(), "results", "output.json")
+    with open(json_path, "w") as json_file:
         dump(output_json, json_file)
 
     fieldnames = results[0].keys()
-    csv_path = os.path.join(os.getcwd(), 'results', 'output.csv')
-    with open(csv_path, 'w') as csv_file:
+    csv_path = os.path.join(os.getcwd(), "results", "output.csv")
+    with open(csv_path, "w") as csv_file:
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
         for row in results:
@@ -79,23 +79,56 @@ def survey_fastrot(species_set, Av_set, Air_set, rh_set, obl_set):
 
 description = "Use this program to iterate `fastrot.py` over a desired parameter space."
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import argparse
 
-    speciesList = ['H2O', 'H2O-CH4', 'CO2', 'CO']
+    speciesList = ["H2O", "H2O-CH4", "CO2", "CO"]
 
-    parser = argparse.ArgumentParser(description=description,
-                                     formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('--species_set', nargs='+', metavar='species', type=str, required=True,
-                        help="Desired ice species to be considered. \n"
-                             "The valid inputs are: " + ', '.join(speciesList)),
-    parser.add_argument('--Av_set', nargs='+', metavar='visual albedo', type=float, required=True, )
-    parser.add_argument('--Air_set', nargs='+', metavar='infrared albedo', type=float, required=True, )
-    parser.add_argument('--rh_set', nargs='+', metavar='heliocentric_distance', type=float, required=True, )
-    parser.add_argument('--obl_set', nargs='+', metavar='obliquity', type=float, required=True, )
+    parser = argparse.ArgumentParser(
+        description=description, formatter_class=argparse.RawTextHelpFormatter
+    )
+    parser.add_argument(
+        "--species_set",
+        nargs="+",
+        metavar="species",
+        type=str,
+        required=True,
+        help="Desired ice species to be considered. \n"
+        "The valid inputs are: " + ", ".join(speciesList),
+    ),
+    parser.add_argument(
+        "--Av_set",
+        nargs="+",
+        metavar="visual albedo",
+        type=float,
+        required=True,
+    )
+    parser.add_argument(
+        "--Air_set",
+        nargs="+",
+        metavar="infrared albedo",
+        type=float,
+        required=True,
+    )
+    parser.add_argument(
+        "--rh_set",
+        nargs="+",
+        metavar="heliocentric_distance",
+        type=float,
+        required=True,
+    )
+    parser.add_argument(
+        "--obl_set",
+        nargs="+",
+        metavar="obliquity",
+        type=float,
+        required=True,
+    )
 
     try:
         args = parser.parse_args()
-        survey_fastrot(args.species_set, args.Av_set, args.Air_set, args.rh_set, args.obl_set)
+        survey_fastrot(
+            args.species_set, args.Av_set, args.Air_set, args.rh_set, args.obl_set
+        )
     except Exception as e:
         print(e)
