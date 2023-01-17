@@ -22,6 +22,8 @@
 
    Modification History
    --------------------
+   Michael S. P. Kelley January 2023
+   - Make file output optional and improve error handing.
    Mark Van Selous July 2021
    - Rewrote cgifastrot.f and sublime.f in python as fastrot.py
    - Increased the latitude step size from 41 to 181.
@@ -433,8 +435,8 @@ if __name__ == '__main__':
     parser.add_argument('species', type=str,
                         help="Desired ice species to be considered. \n"
                              "The valid inputs are: " + ', '.join(speciesList))
-    parser.add_argument('--Av', metavar='visual albedo', type=float, required=True,)
-    parser.add_argument('--Air', metavar='infrared albedo', type=float, required=True,)
+    parser.add_argument('--Av', metavar='visual_albedo', type=float, required=True,)
+    parser.add_argument('--Air', metavar='infrared_albedo', type=float, required=True,)
     parser.add_argument('--rh', metavar='heliocentric_distance', type=float, required=True,)
     parser.add_argument('--obl', metavar='obliquity', type=float, required=True,)
     parser.add_argument('--temp', metavar='temperature', type=float, default=-1,
@@ -443,13 +445,20 @@ if __name__ == '__main__':
                              "H2O-CH4: 190 K\n"
                              "CO2: 100 K\n"
                              "CO: 60 K\n")
+    parser.add_argument('-o', metavar='filename', dest='filename',
+                        help="Save results to this file name")
+    parser.add_argument('--format', choices=['json', 'csv'], default='json',
+                        help="output file format")
     parser.add_argument('--verbosity', '-v', metavar='verbosity', type=int, default=0,
                         help="By default (verbosity = 0), only the final result will be displayed in stdout."
                              " A  verbosity of 1 will output the logger messages as well.")
 
     try:
         args = parser.parse_args()
-        results = {'results': run_model(args.species, args.Av, args.Air, args.rh, args.obl, args.temp, args.verbosity)}
+        results = {
+            'status': 'success',
+            'results': run_model(args.species, args.Av, args.Air, args.rh, args.obl, args.temp, args.verbosity),
+        }
     except Exception as e:
         results = {
             'status': 'failure',
@@ -458,13 +467,13 @@ if __name__ == '__main__':
 
     print(json.dumps(results))
 
-    json_path = os.path.join(os.getcwd(), 'results', 'output.json')
-    with open(json_path, 'w') as json_file:
-        json.dump(results, json_file)
-
-    fieldnames = list(results['results'].keys())
-    csv_path = os.path.join(os.getcwd(), 'results', 'output.csv')
-    with open(csv_path, 'w') as csv_file:
-        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerow(results['results'])
+    if results['status'] != 'failure' and args.filename is not None:
+        if args.format == 'json':
+            with open(args.filename, 'w') as json_file:
+                json.dump(results, json_file)
+        else:
+            fieldnames = list(results['results'].keys())
+            with open(args.filename, 'w') as csv_file:
+                writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerow(results['results'])
