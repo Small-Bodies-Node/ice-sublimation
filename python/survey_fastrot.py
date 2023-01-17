@@ -52,10 +52,10 @@ from itertools import product
 from json import dump
 
 
-def survey_fastrot(species_set, Av_set, Air_set, rh_set, obl_set):
+def survey_fastrot(species_set, Av_set, Air_set, rh_set, obl_set, nlat):
     search_space = []
     arguments = locals()
-    for param in [species_set, Av_set, Air_set, rh_set, obl_set]:
+    for param in [species_set, Av_set, Air_set, rh_set, obl_set, nlat]:
         search_space.append(param if isinstance(param, list) else [param])
     results = []
     for inputs in product(*search_space):
@@ -87,26 +87,21 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description=description, formatter_class=argparse.RawTextHelpFormatter
     )
-    parser.add_argument(
-        "--species_set",
-        nargs="+",
-        metavar="species",
-        type=str,
-        required=True,
-        help="Desired ice species to be considered. \n"
-        "The valid inputs are: " + ", ".join(speciesList),
-    ),
+    parser.add_argument("--species_set", 
+        metavar="species", choices=speciesList, 
+        nargs="+", 
+        required=True, help="Ice species to consider.")
     parser.add_argument(
         "--Av_set",
         nargs="+",
-        metavar="visual albedo",
+        metavar="visual_albedo",
         type=float,
         required=True,
     )
     parser.add_argument(
         "--Air_set",
         nargs="+",
-        metavar="infrared albedo",
+        metavar="infrared_albedo",
         type=float,
         required=True,
     )
@@ -124,11 +119,14 @@ if __name__ == "__main__":
         type=float,
         required=True,
     )
+    parser.add_argument(
+        "--nlat", metavar="n", type=int, default=181, help="Number of latitude steps"
+    )
 
     try:
         args = parser.parse_args()
         survey_fastrot(
-            args.species_set, args.Av_set, args.Air_set, args.rh_set, args.obl_set
+            args.species_set, args.Av_set, args.Air_set, args.rh_set, args.obl_set, args.nlat
         )
     except Exception as e:
         print(e)
