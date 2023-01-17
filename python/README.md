@@ -59,13 +59,17 @@ python survey_fastrot.py --species_list 'H2O' 'H2O-CH4' --Av_list 0.05 0.10 --Ai
 4. rh_list - heliocentric_distance [heliocentric_distance ...]
 5. obl_list - obliquity [obliquity ...]
 
+## Tests
+
+The script `test_fastrot.py` will compare `fastrot.py` output to a set of precomputed values from the FORTRAN code for a pole-on case and the same number of latitude steps.  All tests agree within 0.06%.
+
 ## Data
 
 The [data](data/) directory provides the pole-on case, which is identical both to the non-rotating case and to the case of zero thermal inertia. The visual Bond albedo is 5% and the thermal emissivity is 100%. The parameters were chosen to provide a direct comparison between the updated model and the example output from the original FORTRAN code.
 
 ## Notice
 
-Copyright 2021 The Ice Sublimation Tool Developers.
+Copyright 2021,2023 The Ice Sublimation Tool Developers.
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
